@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Login</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+
+</head>
+<body>
+     <div>
+        <h2>Signup</h2>
+        <form>
+            <input type="text" id="username" name="username" placeholder="Username" required><br><br>
+            <input type="password" id="password" name="password" placeholder="Password" required><br><br>
+            <input type="text" id="firstName" name="firstName" placeholder="First Name" required><br><br>
+            <input type="text" id="lastName" name="lastName" placeholder="Last Name" required><br><br>
+            <button type="button" onclick="signup()">Signup</button>
+            <a href="http://localhost:5200">
+                <button type="button">Back to Login</button>
+            </a>
+        </form>
+        <div id="errorMessage"></div>
+    </div>
+
+    <script>
+        async function signup() {
+            try {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const firstName = document.getElementById('firstName').value;
+                const lastName = document.getElementById('lastName').value;
+                const errorMessage = document.getElementById('errorMessage');
+
+                // Clear previous error message
+                errorMessage.textContent = '';
+
+                // Perform login logic here (e.g., send a request to the server)
+                if (username === '' || password === '') {
+                    return errorMessage.textContent = 'Please fill in both fields.';
+                }
+                const res = await axios.post('/api/users/signup', {username, password, firstName, lastName})
+                if(res.data.success){
+                    console.log('success signup')
+                    localStorage.setItem('username', res.data.username)
+                    window.location.replace("http://localhost:5200");
+                } else {
+                    errorMessage.textContent = res.data.message;
+                }
+            } catch (error) {
+                console.error('Error logging in:', error);
+                if (error.response && error.response.data) {
+                    errorMessage.textContent = error.response.data.message;
+                } else {
+                    errorMessage.textContent = 'An error occurred. Please try again.';
+                }
+            }
+                        
+        }
+    </script>
+</body>
+</html>

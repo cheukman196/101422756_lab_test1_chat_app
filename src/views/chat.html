@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Client</title>
+    <!-- <script src="/socket.io/socket.io.js"></script> -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <!-- this is the client side-->
+    <h1>Sockets</h1>
+    <script>
+        const socket = io('http://localhost:5300')
+        const username = localStorage.getItem("username")
+        if(username == null) logout()
+
+        socket.on('connect', () => {
+            console.log('Connected to server')
+            const username = localStorage.getItem("username")
+            socket.send(`User "${username}" joined the server.`)
+        })
+        
+        socket.on('message', (data) => {
+            console.log(`Data: ${data}`)
+        })
+
+        function sendMessage() {
+            const text = document.getElementById('message');
+            const data = {
+                senderId: socket.id,
+                message: text.value,
+                date: Date()
+            }
+            socket.emit('private_message', data)
+        }
+
+        socket.on('private_message', (data) => {
+            console.log(JSON.stringify(data))
+
+            // unpacking into a message container (<p> for now)
+            const receivedMsg = `<p style='color:red'>${data.senderId}: ${data.message}</p>` 
+
+            // populate into chat container
+            const container = document.getElementById('container');
+            container.innerHTML += receivedMsg
+        })
+
+        function logout(){
+            localStorage.removeItem("username");
+            window.location.replace("http://localhost:5200");
+        }
+    </script>
+
+     <a href="/group-chat">Group Chat</a>
+    </br>
+    <input type="text" id="message" name="message" placeholder="Enter your message" />
+    <button onclick="sendMessage()">Sent Message</button>
+    <h3>Chat History</h3>
+    <div id="container" name="container"></div>
+
+</body>
+</html>

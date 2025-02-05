@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Chat</title>
+    <!-- <script src="/socket.io/socket.io.js"></script> -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+</head>
+<body>
+        
+    <script>
+        const socket = io('http://localhost:5300')
+        const username = localStorage.getItem("username")
+        if(username == null) logout()
+
+        socket.on('connect', () => {
+            socket.send(`User ${username} joined Group Chats`)
+            const usernameDiv = document.getElementById('username');
+            usernameDiv.innerHTML += `<b>${username}</b>`
+        })
+        
+        socket.on('message', (data) => {
+            console.log(`Data: ${data}`)
+        
+        })
+
+        socket.on('group_message', (data) =>{
+            console.log(JSON.stringify(data))
+        })
+
+        function joinGroup(){
+            const container = document.getElementById('container')
+            container.innerHTML = ""
+            showElementById('message')
+            showElementById('sendButton')
+            showElementById('container')
+            showElementById('containerTitle')
+
+            // get selected group's name from form
+            const groupRadioBox = document.querySelector('input[name="group"]:checked');
+            const groupName = groupRadioBox.value
+            socket.emit('join_group', {username: localStorage.getItem("username"), room: groupName})
+        }
+
+        function leaveGroup(){
+            const container = document.getElementById('container')
+            container.innerHTML = ""
+            hideElementById('message')
+            hideElementById('sendButton')
+            hideElementById('container')
+            hideElementById('containerTitle')
+
+            // get selected 
+            const groupRadioBox = document.querySelector('input[name="group"]:checked');
+            const groupName = groupRadioBox.value
+            socket.emit('leave_group', {username: localStorage.getItem("username"), room: groupName})
+        }
+
+        function sendGroupMessage(){
+            const groupRadioBox = document.querySelector('input[name="group"]:checked');
+            const groupName = groupRadioBox.value
+
+            const text = document.getElementById('message');
+            const data = {
+                from_user: localStorage.getItem("username"),
+                room: groupName,
+                message: text.value,
+                date: new Date()
+            }
+            socket.emit('group_message', data)
+        }
+
+        socket.on('group_message', (data) => {
+            console.log(JSON.stringify(data))
+            let receivedMsg = "";
+            // unpacking into a message container (<p> for now)
+            if(data.from_user == localStorage.getItem("username")){
+                receivedMsg = `<p style='color:blue'>[${data.room}] ${data.from_user}: ${data.message}</p>` 
+            } else {
+                receivedMsg = `<p style='color:black'>[${data.room}] ${data.from_user}: ${data.message}</p>` 
+            }
+
+            // populate into chat container
+            const container = document.getElementById('container');
+            container.innerHTML += receivedMsg
+        })
+
+        function logout(){
+            localStorage.removeItem("username");
+            window.location.replace("http://localhost:5200");
+        }
+
+        function hideElementById(id){
+            const element = document.getElementById(id)
+            element.style.display = "none" 
+        }
+
+        function showElementById(id){
+            const element = document.getElementById(id)
+            element.style.display = "" 
+        }
+
+    </script>
+
+    <h1>Group Chat</h1>
+    <div id="username">Welcome back, </div>
+    <a href="http://localhost:5200/chat"><button type="button">Direct Chat</button></a>
+    <button type="button" onclick="logout()">Logout</button><br><br>
+    <input type="radio" id="group1" name="group" value="Devops">Devops <br />
+    <input type="radio" id="group2" name="group" value="Fullstack">Fullstack <br />
+    <input type="radio" id="group3" name="group" value="Sports">Sports <br />
+    <input type="radio" id="group4" name="group" value="NodeJS">NodeJS <br />
+    <input type="radio" id="group5" name="group" value="Android">Android <br />
+    <button onclick="joinGroup()">Join Group</button>
+    <button onclick="leaveGroup()">Leave Group</button>
+
+    <br><br>
+    <input type="text" id="message" name="message" placeholder="Enter your message" style="display:none"/>
+    <button id="sendButton" onclick="sendGroupMessage()" style="display:none">Send Message</button>
+    <h3 id="containerTitle" style="display:none">Chat Content</h3>
+    <h4 id="roomName"></h4>
+    <div id="container" name="container" ></div>
+
+</body>
+</html>
