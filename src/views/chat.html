@@ -19,14 +19,20 @@
             console.log('Connected to server')
             const usernameDiv = document.getElementById('username')
             usernameDiv.innerHTML += `<b>${username}</b>`
-            socket.send(`User "${username}" joined direct chats.`)
-            socket.emit('register_user', username)
+            socket.emit('register_user', localStorage.getItem("username"))
         })
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server')
+            socket.emit('deregister_user', localStorage.getItem("username"))
+        })
+
+
 
         function sendMessage() {
             const errorDiv = document.getElementById('errorMsg');
             errorDiv.innerHTML = ""
-            
+
             const message = document.getElementById('message');
             const to_user = document.getElementById('to_user');
             const data = {

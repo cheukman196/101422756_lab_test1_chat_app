@@ -33,6 +33,11 @@ io.on('connection', (socket) => {
         console.log(`User registered to direct chat: ${username}`)
     })
 
+    socket.on('deregister_user', (username) => {
+        delete userList[username];
+        console.log(`User deregistered from direct chat: ${username}`)
+    })
+
     // multi-user chat: requires emitting the message
     socket.on('private_message', async (data) => {
         try {
