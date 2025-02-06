@@ -79,11 +79,21 @@ router.post('/login',
 
 })
 
-// route: POST /api/v1/user/logout
-// logout user by deleteing 'token' cookie
-router.post('/logout', (req, res) => {
-    res.clearCookie('token', {httpOnly: true, secure: true})
-    res.status(200).send({ message: "User logged out successfully."})
+router.get('/:username', 
+    async (req, res) => {
+    try {
+        const username = req.params.username;
+        const user = await User.find(
+            { username: username }
+        );
+
+        if(user.length == 0)
+            return res.status(404).send({success: false, message: "User cannot be found."})
+        return res.status(200).json({ message: "User name found in database", success: true, username: user.username }); 
+   
+    } catch (err) {
+        return res.status(500).send({ message: '500: internal server error', success: false, error: err });
+    }
 
 })
 

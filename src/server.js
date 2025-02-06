@@ -18,6 +18,8 @@ const io = socketIo(server, {
     }
 })
 
+
+const userList = {}
 io.on('connection', (socket) => {
     console.log('New client connected to server');
     console.log(`New Socket connection: ${socket.id}`)
@@ -25,20 +27,31 @@ io.on('connection', (socket) => {
     socket.on('disconnect', (reason) => {
         console.log(`Client disconnected: ${reason}`)
     })
-
-    socket.on('message', (data) => {
-        console.log(`Data from ${socket.id} : ${data}`)
-        
+    
+    socket.on('register_user', (username) => {
+        userList[username] = socket.id;
+        console.log(`User registered to direct chat: ${username}`)
     })
 
     // multi-user chat: requires emitting the message
-    socket.on('private_message', (data) => {
-        data.senderId = socket.id // sender's id
-        console.log(JSON.stringify(data))
+    socket.on('private_message', async (data) => {
+        try {
+            data.senderId = socket.id // sender's id
+            console.log(JSON.stringify(data))
+            let fromUserIsOnline = data.from_user in userList;
+            let toUserIsOnline = data.to_user in userList;
+            if(fromUserIsOnline && toUserIsOnline){
+                await axios.post('http://localhost:5200/api/private-messages', data)
+                io.to(userList[data.from_user]).emit('private_message', data);
+                io.to(userList[data.to_user]).emit('private_message', data);
+            } else {
+                socket.emit('user_not_found')
+            }
+
         
-        axios.post('/api/private-messages', data)
-    
-        socket.broadcast.emit('private_message', data)
+        } catch (err) {
+            console.log(err)
+        }
     // broadcast = only to all others (not sender)
     })
 

@@ -9,7 +9,7 @@
 </head>
 <body>
     <!-- this is the client side-->
-    <h1>Sockets</h1>
+
     <script>
         const socket = io('http://localhost:5300')
         const username = localStorage.getItem("username")
@@ -17,19 +17,22 @@
 
         socket.on('connect', () => {
             console.log('Connected to server')
-            const username = localStorage.getItem("username")
-            socket.send(`User "${username}" joined the server.`)
-        })
-        
-        socket.on('message', (data) => {
-            console.log(`Data: ${data}`)
+            const usernameDiv = document.getElementById('username')
+            usernameDiv.innerHTML += `<b>${username}</b>`
+            socket.send(`User "${username}" joined direct chats.`)
+            socket.emit('register_user', username)
         })
 
         function sendMessage() {
-            const text = document.getElementById('message');
+            const errorDiv = document.getElementById('errorMsg');
+            errorDiv.innerHTML = ""
+            
+            const message = document.getElementById('message');
+            const to_user = document.getElementById('to_user');
             const data = {
-                senderId: socket.id,
-                message: text.value,
+                from_user: username,
+                to_user: to_user.value,
+                message: message.value,
                 date: Date()
             }
             socket.emit('private_message', data)
@@ -37,26 +40,48 @@
 
         socket.on('private_message', (data) => {
             console.log(JSON.stringify(data))
-
+            let receivedMsg = ""
             // unpacking into a message container (<p> for now)
-            const receivedMsg = `<p style='color:red'>${data.senderId}: ${data.message}</p>` 
-
+            if(data.from_user == username)
+                receivedMsg = `<p style='color:blue'>${data.from_user}: ${data.message}</p>` 
+            else 
+                receivedMsg = `<p style='color:black'>${data.from_user}: ${data.message}</p>` 
             // populate into chat container
             const container = document.getElementById('container');
             container.innerHTML += receivedMsg
+        })
+
+        socket.on('user_not_found', () => {
+            const errorDiv = document.getElementById('errorMsg');
+            errorDiv.innerHTML = "User is currently not online"
         })
 
         function logout(){
             localStorage.removeItem("username");
             window.location.replace("http://localhost:5200");
         }
+        function hideElementById(id){
+            const element = document.getElementById(id)
+            element.style.display = "none" 
+        }
+        function showElementById(id){
+            const element = document.getElementById(id)
+            element.style.display = "" 
+        }
     </script>
 
-     <a href="/group-chat">Group Chat</a>
-    </br>
+    <h1>Direct Chat</h1>
+    <div id="username">Welcome back, </div>
+    <a href="http://localhost:5200/group-chat"><button type="button">Group Chat</button></a>
+    <button type="button" onclick="logout()">Logout</button><br><br>
+    
+    <br><br>
+    <input type="text" id="to_user" name="to_user" placeholder="Send to User" />
     <input type="text" id="message" name="message" placeholder="Enter your message" />
-    <button onclick="sendMessage()">Sent Message</button>
-    <h3>Chat History</h3>
+    <button id="sendButton" onclick="sendMessage()" >Send Message</button>
+    <div id="errorMsg" name="errorMsg"></div>
+    <h3 id="containerTitle" >Chat Content</h3>
+    <h4 id="roomName"></h4>
     <div id="container" name="container"></div>
 
 </body>
